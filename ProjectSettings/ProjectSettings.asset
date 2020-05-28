@@ -551,7 +551,7 @@ PlayerSettings:
   scriptingDefineSymbols:
     14: DISABLESTEAMWORKS
     19: DISABLESTEAMWORKS
-    21: DISABLESTEAMWORKS;UNITY_XBOXONE_DEVELOPMENT_BUILD
+    21: DISABLESTEAMWORKS;UNITY_XBOXONE_PACKAGE_BUILD;UNITY_XBOXONE_DEVELOPMENT_BUILD
   platformArchitecture: {}
   scriptingBackend: {}
   il2cppCompilerConfiguration: {}
@@ -655,7 +655,8 @@ PlayerSettings:
   XboxOneDescription: 
   XboxOneLanguage:
   - enus
-  XboxOneCapability: []
+  XboxOneCapability:
+  - InternetClientServer
   XboxOneGameRating:
     CERO (Japan): 0
     COB-AU (Australia): 0
