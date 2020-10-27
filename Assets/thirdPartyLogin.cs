@@ -2,6 +2,10 @@
 #if ENABLE_WINMD_SUPPORT
 using Microsoft.Xbox.Services;
 #endif
+#if UNITY_STADIA
+using UnityEngine.Stadia;
+using Unity.StadiaWrapper;
+#endif
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -47,7 +51,7 @@ public class thirdPartyLogin : MonoBehaviour
         mCurrentUser = Windows.Xbox.ApplicationModel.Core.CoreApplicationContext.CurrentUser;
         mContext = new XboxLiveContext(mCurrentUser);
 #endif
-#if UNITY_PS4 || ENABLE_WINMD_SUPPORT
+#if UNITY_PS4 || ENABLE_WINMD_SUPPORT || UNITY_STADIA
         PrintLog("\n Start Sign-in");
         SignIn();
 #endif
@@ -238,6 +242,52 @@ public class thirdPartyLogin : MonoBehaviour
                 }
             });
         }
+    }
+#endif
+#if UNITY_STADIA
+    void SignIn()
+    {
+        GgpPlayerId playerId = StadiaNativeApis.GgpGetPrimaryPlayerId();
+
+        float startTime = Time.realtimeSinceStartup;
+        while (playerId.Value == (int)GgpIdConstants.kGgpInvalidId && Time.realtimeSinceStartup - startTime < 10f)
+        {
+            new WaitForSeconds(0.5f);
+            playerId = StadiaNativeApis.GgpGetPrimaryPlayerId();
+        }
+        if (playerId.Value == (int)GgpIdConstants.kGgpInvalidId)
+        {
+            PrintLog("\n[STADIA] Can't retrieve playerId!");
+        }
+        PrintLog("\n[STADIA] PlayerId: " + playerId.Value);
+
+        GgpStatus reqStatus;
+        GgpPlayerJwt playerJwt = StadiaNativeApis.GgpGetJwtForPlayer(playerId, 1000, new GgpJwtFields((ulong)GgpJwtFieldValues.kGgpJwtField_None)).GetResultBlocking<GgpPlayerJwt>(out reqStatus);
+
+        PrintLog("\nPlayerJwt: " + playerJwt.jwt);
+
+        var user = AccelBytePlugin.GetUser();
+        PrintLog("\nLogin to AB");
+        user.LoginWithOtherPlatform(AccelByte.Models.PlatformType.Stadia, playerJwt.jwt, loginResult =>
+        {
+            if (!loginResult.IsError)
+            {
+                PrintLog("\nLogin Success!");
+                user.GetData(resultData =>
+                {
+                    if (!resultData.IsError)
+                    {
+                        PrintLog("\nUserId: " + resultData.Value.userId);
+                        PrintLog("\nDisplayName: " + resultData.Value.displayName);
+                    }
+                });
+            }
+            else
+            {
+                PrintLog("\nCannot logged in.");
+                PrintLog("\nError: " + loginResult.Error.Code + " | Message: " + loginResult.Error.Message);
+            }
+        });
     }
 #endif
     public void PrintLog(string Message)
